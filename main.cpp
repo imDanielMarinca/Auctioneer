@@ -21,6 +21,20 @@ bool IsClose(double number1, double number2, double percentage) {
     return difference <= percentage;
 }
 
+int RandomPrice(int asking_price, int bidding_price) {
+    int max = asking_price; // This should become random after the second bid.
+    int min = bidding_price;
+    
+    std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_int_distribution<int> dist(min, max);
+    
+    // Should this be int or double?
+    int random_price = dist(mt);
+    
+    return random_price;
+}
+
 int main() {
     std::cout << "------------\n";
     std::cout << "|AUCTIONEER|\n";
@@ -72,6 +86,11 @@ int main() {
 
     std::cout << "Choose which one you would like to bid on (enter number): ";
     std::cin >> chosen_item;
+    
+    if (budget < items[chosen_item]) {
+        std::cout << "Not enough money!";
+        return 1;
+    }
 
     KeyToContinue();
     
@@ -85,27 +104,39 @@ int main() {
 
     std::cout << "Enter your bidding price: ";
     std::cin >> bidding_price;
-
-    while (!item_sold) {
-
+    
+    if (budget - bidding_price <= 0) {
+        std::cout << "Not enough money!";
+        return 1;
+    }
+    
+    while (!item_sold) { // Have a vector that tracks all the bids. Maybe do something with it?
         if (IsClose(bidding_price, asking_price, 5.0)) {
             std::cout << "SOLD!";
             item_sold = true;
             break;
         } else {
-            int max = asking_price;
-            int min = bidding_price;
-        
-            std::random_device rd;
-            std::mt19937 mt(rd());
-            std::uniform_int_distribution<int> dist(min, max);
-    
-            int random_price = dist(mt);
+            int random_price = RandomPrice(asking_price, bidding_price);
+            while (random_price == bidding_price && random_price == asking_price && random_price > bidding_price) { // Should it be && or ||?
+                random_price = RandomPrice(asking_price, bidding_price);
+            }
+            
+            if (random_price == bidding_price) {
+                std::cout << "SOLD!";
+                item_sold == true;
+                break;
+            }
             
             char choice;
 
             std::cout << "Hmm, too low. What about $" << random_price << "? (y/n)";
             std::cin >> choice;
+            
+            if (random_price - bidding_price <= 1) {
+                // There should be a 50% chance of this happening, and 50% chance of it being sold.
+                std::cout << "Looks like we won't be able to make a deal. Have a good day.\n";
+                break;
+            }
             
             if (choice == 'y') {
                 std::cout << "SOLD!";
@@ -114,6 +145,11 @@ int main() {
             } else {
                 std::cout << "Enter your bidding price: ";
                 std::cin >> bidding_price;
+                
+                if (budget - bidding_price < 0) {
+                std::cout << "Not enough money!"; // If the budget is $5000 and the user puts 5000, it should be sold.
+                return 1;
+    }
             }
         }
     }
